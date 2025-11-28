@@ -68,6 +68,11 @@ export default function Home() {
   });
   const [registerErrors, setRegisterErrors] = useState<FormErrors>({});
   const [authLoading, setAuthLoading] = useState(false);
+  
+  // Password visibility states
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const router = useRouter();
 
@@ -622,23 +627,41 @@ export default function Home() {
                   <label className="block text-sm font-light tracking-widest mb-2">
                     Password <span className="text-red-600">*</span>
                   </label>
-                  <input
-                    type="password"
-                    value={loginData.password}
-                    onChange={(e) => {
-                      setLoginData({...loginData, password: e.target.value});
-                      if (loginErrors.password) {
-                        const newErrors = {...loginErrors};
-                        delete newErrors.password;
-                        setLoginErrors(newErrors);
-                      }
-                    }}
-                    className={`w-full p-3 border rounded-lg focus:outline-none transition-colors duration-300 ${
-                      loginErrors.password 
-                        ? 'border-red-500 focus:border-red-600 bg-red-50' 
-                        : 'border-gray-300 focus:border-black'
-                    }`}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showLoginPassword ? "text" : "password"}
+                      value={loginData.password}
+                      onChange={(e) => {
+                        setLoginData({...loginData, password: e.target.value});
+                        if (loginErrors.password) {
+                          const newErrors = {...loginErrors};
+                          delete newErrors.password;
+                          setLoginErrors(newErrors);
+                        }
+                      }}
+                      className={`w-full p-3 pr-12 border rounded-lg focus:outline-none transition-colors duration-300 ${
+                        loginErrors.password 
+                          ? 'border-red-500 focus:border-red-600 bg-red-50' 
+                          : 'border-gray-300 focus:border-black'
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      className="absolute right-3 top-3 text-gray-600 hover:text-gray-800 cursor-pointer"
+                    >
+                      {showLoginPassword ? (
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-14-14zM10 3a7 7 0 016.402 3.998l1.414-1.414C15.505 2.954 13.027 1 10 1S4.495 2.954 2.184 5.584l1.414 1.414A7 7 0 0110 3zm7 7a7.001 7.001 0 01-11.385 5.97l-1.414 1.414C4.495 17.046 6.973 19 10 19s5.505-1.954 7.816-4.584l-1.414-1.414A7.001 7.001 0 0110 17a4 4 0 000-8z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                   {loginErrors.password && (
                     <p className="text-red-600 text-sm mt-1">{loginErrors.password}</p>
                   )}
@@ -749,23 +772,41 @@ export default function Home() {
                   <label className="block text-sm font-light tracking-widest mb-2">
                     Password <span className="text-red-600">*</span>
                   </label>
-                  <input
-                    type="password"
-                    value={registerData.password}
-                    onChange={(e) => {
-                      setRegisterData({...registerData, password: e.target.value});
-                      if (registerErrors.password) {
-                        const newErrors = {...registerErrors};
-                        delete newErrors.password;
-                        setRegisterErrors(newErrors);
-                      }
-                    }}
-                    className={`w-full p-3 border rounded-lg focus:outline-none transition-colors duration-300 ${
-                      registerErrors.password 
-                        ? 'border-red-500 focus:border-red-600 bg-red-50' 
-                        : 'border-gray-300 focus:border-black'
-                    }`}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showRegisterPassword ? "text" : "password"}
+                      value={registerData.password}
+                      onChange={(e) => {
+                        setRegisterData({...registerData, password: e.target.value});
+                        if (registerErrors.password) {
+                          const newErrors = {...registerErrors};
+                          delete newErrors.password;
+                          setRegisterErrors(newErrors);
+                        }
+                      }}
+                      className={`w-full p-3 pr-12 border rounded-lg focus:outline-none transition-colors duration-300 ${
+                        registerErrors.password 
+                          ? 'border-red-500 focus:border-red-600 bg-red-50' 
+                          : 'border-gray-300 focus:border-black'
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      className="absolute right-3 top-3 text-gray-600 hover:text-gray-800 cursor-pointer"
+                    >
+                      {showRegisterPassword ? (
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-14-14zM10 3a7 7 0 016.402 3.998l1.414-1.414C15.505 2.954 13.027 1 10 1S4.495 2.954 2.184 5.584l1.414 1.414A7 7 0 0110 3zm7 7a7.001 7.001 0 01-11.385 5.97l-1.414 1.414C4.495 17.046 6.973 19 10 19s5.505-1.954 7.816-4.584l-1.414-1.414A7.001 7.001 0 0110 17a4 4 0 000-8z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                   {registerErrors.password && (
                     <p className="text-red-600 text-sm mt-1">{registerErrors.password}</p>
                   )}
@@ -775,23 +816,41 @@ export default function Home() {
                   <label className="block text-sm font-light tracking-widest mb-2">
                     Confirm Password <span className="text-red-600">*</span>
                   </label>
-                  <input
-                    type="password"
-                    value={registerData.confirmPassword}
-                    onChange={(e) => {
-                      setRegisterData({...registerData, confirmPassword: e.target.value});
-                      if (registerErrors.confirmPassword) {
-                        const newErrors = {...registerErrors};
-                        delete newErrors.confirmPassword;
-                        setRegisterErrors(newErrors);
-                      }
-                    }}
-                    className={`w-full p-3 border rounded-lg focus:outline-none transition-colors duration-300 ${
-                      registerErrors.confirmPassword 
-                        ? 'border-red-500 focus:border-red-600 bg-red-50' 
-                        : 'border-gray-300 focus:border-black'
-                    }`}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={registerData.confirmPassword}
+                      onChange={(e) => {
+                        setRegisterData({...registerData, confirmPassword: e.target.value});
+                        if (registerErrors.confirmPassword) {
+                          const newErrors = {...registerErrors};
+                          delete newErrors.confirmPassword;
+                          setRegisterErrors(newErrors);
+                        }
+                      }}
+                      className={`w-full p-3 pr-12 border rounded-lg focus:outline-none transition-colors duration-300 ${
+                        registerErrors.confirmPassword 
+                          ? 'border-red-500 focus:border-red-600 bg-red-50' 
+                          : 'border-gray-300 focus:border-black'
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-3 text-gray-600 hover:text-gray-800 cursor-pointer"
+                    >
+                      {showConfirmPassword ? (
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-14-14zM10 3a7 7 0 016.402 3.998l1.414-1.414C15.505 2.954 13.027 1 10 1S4.495 2.954 2.184 5.584l1.414 1.414A7 7 0 0110 3zm7 7a7.001 7.001 0 01-11.385 5.97l-1.414 1.414C4.495 17.046 6.973 19 10 19s5.505-1.954 7.816-4.584l-1.414-1.414A7.001 7.001 0 0110 17a4 4 0 000-8z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                   {registerErrors.confirmPassword && (
                     <p className="text-red-600 text-sm mt-1">{registerErrors.confirmPassword}</p>
                   )}
