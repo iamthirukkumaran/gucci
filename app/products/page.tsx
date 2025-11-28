@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface Product {
@@ -28,7 +28,7 @@ interface Toast {
   type: "success" | "error" | "info";
 }
 
-export default function AllProducts() {
+function AllProductsContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isSideNavOpen, setIsSideNavOpen] = useState(false);
@@ -408,5 +408,13 @@ export default function AllProducts() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function AllProducts() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <AllProductsContent />
+    </Suspense>
   );
 }
