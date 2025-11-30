@@ -992,6 +992,8 @@ export default function Home() {
         </div>
       </section>
 
+    
+
       {/* Second Hero Section */}
       <section className="relative w-full h-screen min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -1023,72 +1025,122 @@ export default function Home() {
         </div>
       </section>
 
+
+       {/* Luxury Showcase Section */}
+      <section className="luxury-showcase py-20 bg-linear-to-b from-white to-gray-50">
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-light tracking-wider mb-4">Crafting Timeless Elegance</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">Discover the artistry and heritage behind our iconic collections</p>
+          </div>
+          
+          {/* Luxury Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
+            <div className="space-y-8">
+              <div className="border-l-4 border-[#d4af37] pl-6">
+                <h3 className="text-2xl font-light mb-4">Italian Artistry</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Each piece is meticulously crafted by master artisans in Florence, 
+                  combining traditional techniques with contemporary design.
+                </p>
+              </div>
+              
+              <div className="flex space-x-8">
+                <div className="text-center">
+                  <div className="text-3xl font-light text-[#d4af37] mb-2">1921</div>
+                  <div className="text-sm text-gray-500">Founded</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-light text-[#d4af37] mb-2">100+</div>
+                  <div className="text-sm text-gray-500">Artisans</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-light text-[#d4af37] mb-2">∞</div>
+                  <div className="text-sm text-gray-500">Possibilities</div>
+                </div>
+              </div>
+              
+              <button className="bg-black text-white px-8 py-3 font-light tracking-wider hover:bg-gray-800 transition-colors duration-300 cursor-pointer">
+                EXPLORE HERITAGE
+              </button>
+            </div>
+            
+            {/* Right Image */}
+            <div className="relative">
+              <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden shadow-2xl">
+                <Image
+                  src="/mens-bag-gu.avif"
+                  alt="Luxury Product Showcase - Men's Bag"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              </div>
+              <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-[#d4af37]/20 rounded-full"></div>
+              <div className="absolute -top-6 -right-6 w-32 h-32 bg-[#d4af37]/10 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Enhanced Footer */}
-      <footer className="bg-black text-white py-24 px-6 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
-            <div>
-              <h3 className="text-sm font-light tracking-widest mb-6 text-gray-400">ABOUT GUCCI</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Since 1921, Gucci has been a leading name in luxury fashion, representing Italian craftsmanship 
-                and innovative design.
-              </p>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-light tracking-widest mb-6 text-gray-400">CUSTOMER CARE</h3>
-              <div className="space-y-3">
-                <button className="block text-sm text-gray-400 hover:text-white transition-colors duration-300 tracking-wide text-left cursor-pointer">
-                  Contact Us
-                </button>
-                <button className="block text-sm text-gray-400 hover:text-white transition-colors duration-300 tracking-wide text-left cursor-pointer">
-                  Shipping Info
-                </button>
-                <button className="block text-sm text-gray-400 hover:text-white transition-colors duration-300 tracking-wide text-left cursor-pointer">
-                  Returns
-                </button>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-sm font-light tracking-widest mb-6 text-gray-400">QUICK LINKS</h3>
-              <div className="space-y-3">
-                <button 
-                  onClick={() => router.push('/women')}
-                  className="block text-sm text-gray-400 hover:text-white transition-colors duration-300 tracking-wide text-left cursor-pointer"
-                >
-                  Women's Collection
-                </button>
-                <button 
-                  onClick={() => router.push('/men')}
-                  className="block text-sm text-gray-400 hover:text-white transition-colors duration-300 tracking-wide text-left cursor-pointer"
-                >
-                  Men's Collection
-                </button>
-                <button 
-                  onClick={() => router.push('/products')}
-                  className="block text-sm text-gray-400 hover:text-white transition-colors duration-300 tracking-wide text-left cursor-pointer"
-                >
-                  All Products
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 pt-12">
-            <p className="text-xs text-gray-500 tracking-wide">
-              © 2016 - 2024 Gucci Gucci S.p.A. - All rights reserved. SIAE LICENCE # 2294/I/1936 and 5647/I/1936
-            </p>
-          </div>
+     <footer className="bg-black text-white py-24 px-6 relative overflow-hidden">
+  <div className="max-w-7xl mx-auto relative z-10">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+      <div>
+        <h3 className="text-sm font-light tracking-widest mb-6 text-gray-400">ABOUT GUCCI</h3>
+        <p className="text-gray-400 text-sm leading-relaxed">
+          Since 1921, Gucci has been a leading name in luxury fashion, representing Italian craftsmanship 
+          and innovative design.
+        </p>
+      </div>
+      
+      <div>
+        <h3 className="text-sm font-light tracking-widest mb-6 text-gray-400">CUSTOMER CARE</h3>
+        <div className="space-y-3">
+          <button className="block text-sm text-gray-400 hover:text-white transition-colors duration-300 tracking-wide text-left cursor-pointer">
+            Contact Us
+          </button>
+          <button className="block text-sm text-gray-400 hover:text-white transition-colors duration-300 tracking-wide text-left cursor-pointer">
+            Shipping Info
+          </button>
+          <button className="block text-sm text-gray-400 hover:text-white transition-colors duration-300 tracking-wide text-left cursor-pointer">
+            Returns
+          </button>
         </div>
-
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <h2 className="text-[20vw] font-light text-white/5 tracking-widest select-none animate-pulse-slow">
-            GUCCI
-          </h2>
+      </div>
+      
+      <div>
+        <h3 className="text-sm font-light tracking-widest mb-6 text-gray-400">QUICK LINKS</h3>
+        <div className="space-y-3">
+          <button className="block text-sm text-gray-400 hover:text-white transition-colors duration-300 tracking-wide text-left cursor-pointer">
+            Women's Collection
+          </button>
+          <button className="block text-sm text-gray-400 hover:text-white transition-colors duration-300 tracking-wide text-left cursor-pointer">
+            Men's Collection
+          </button>
+          <button className="block text-sm text-gray-400 hover:text-white transition-colors duration-300 tracking-wide text-left cursor-pointer">
+            All Products
+          </button>
         </div>
-      </footer>
+      </div>
+    </div>
 
+    <div className="border-t border-gray-800 pt-12">
+      <p className="text-xs text-gray-500 tracking-wide">
+        © 2014 - 2025 Gucci Gucci S.p.A. - All rights reserved. SMS LICENCE # 27641/19765 and 26427/19756
+      </p>
+    </div>
+  </div>
+
+  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+    <h2 className="text-[20vw] font-light text-white/5 tracking-widest select-none">
+      GUCCI
+    </h2>
+  </div>
+</footer>
       {/* Toast Notifications */}
       <div className="fixed top-6 right-6 z-9999 space-y-3 max-w-md">
         {toasts.map((toast) => (
