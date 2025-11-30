@@ -541,6 +541,15 @@ export default function Home() {
                         My Orders
                       </button>
                       <button 
+                        onClick={() => {
+                          router.push('/my-addresses');
+                          setIsSideNavOpen(false);
+                        }}
+                        className="block text-lg font-light tracking-wide hover:opacity-70 transition-opacity duration-300 text-left cursor-pointer"
+                      >
+                        My Addresses
+                      </button>
+                      <button 
                         onClick={handleLogout}
                         className="block text-lg font-light tracking-wide text-red-600 hover:opacity-70 transition-opacity duration-300 text-left cursor-pointer"
                       >

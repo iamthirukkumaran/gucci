@@ -3,6 +3,9 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import CountryPhoneInput from "@/components/CountryPhoneInput";
+import { type Country } from "@/lib/countriesWithFlags";
+import { getMaxPhoneDigits, extractDigits, getPhoneValidationMessage } from "@/lib/phoneValidation";
 
 interface CartItem {
   id: string;
@@ -28,6 +31,7 @@ interface ShippingAddress {
   state: string;
   zipCode: string;
   country: string;
+  countryCode?: string;
 }
 
 interface FormErrors {
@@ -52,7 +56,8 @@ export default function Checkout() {
     city: "",
     state: "",
     zipCode: "",
-    country: "United States",
+    country: "",
+    countryCode: "",
   });
   const [shippingErrors, setShippingErrors] = useState<FormErrors>({});
   const [deliveryOption, setDeliveryOption] = useState("standard");
@@ -65,7 +70,37 @@ export default function Checkout() {
   });
   const [cardErrors, setCardErrors] = useState<FormErrors>({});
 
+  // Address management states
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+  const [showAddressForm, setShowAddressForm] = useState(true);
+  const [saveAddressForLater, setSaveAddressForLater] = useState(false);
+
   const router = useRouter();
+
+  useEffect(() => {
+    loadCart();
+    checkAuthStatus();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadSavedAddresses();
+    }
+  }, [user]);
+
+  const loadSavedAddresses = async () => {
+    try {
+      const response = await fetch(`/api/addresses?userId=${user._id}`);
+      const data = await response.json();
+      if (data.success) {
+        setSavedAddresses(data.addresses);
+        // Don't auto-select, let user choose
+      }
+    } catch (error) {
+      console.error('Error loading saved addresses:', error);
+    }
+  };
 
   useEffect(() => {
     loadCart();
@@ -128,6 +163,11 @@ export default function Checkout() {
   };
 
   const validateShippingAddress = (): boolean => {
+    // If a saved address is selected and not showing form, validation passes
+    if (!showAddressForm && selectedAddressId) {
+      return true;
+    }
+
     const errors: FormErrors = {};
 
     if (!shippingAddress.firstName.trim()) errors.firstName = "First name is required";
@@ -135,6 +175,7 @@ export default function Checkout() {
     if (!shippingAddress.email.trim()) errors.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shippingAddress.email))
       errors.email = "Invalid email format";
+    if (!shippingAddress.countryCode?.trim()) errors.countryCode = "Country is required";
     if (!shippingAddress.phone.trim()) errors.phone = "Phone number is required";
     if (!shippingAddress.street.trim()) errors.street = "Street address is required";
     if (!shippingAddress.city.trim()) errors.city = "City is required";
@@ -166,8 +207,29 @@ export default function Checkout() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleShippingSubmit = () => {
+  const handleShippingSubmit = async () => {
     if (validateShippingAddress()) {
+      // Save address if user wants to save it for later
+      if (saveAddressForLater && user) {
+        try {
+          const response = await fetch('/api/addresses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user._id,
+              ...shippingAddress,
+              isDefault: savedAddresses.length === 0, // Make first address default
+            }),
+          });
+          const data = await response.json();
+          if (data.success) {
+            showToast('Address saved successfully', 'success');
+            loadSavedAddresses();
+          }
+        } catch (error) {
+          console.error('Error saving address:', error);
+        }
+      }
       setCurrentStep(3);
     } else {
       showToast("Please fill in all required shipping fields", "error");
@@ -357,221 +419,309 @@ export default function Checkout() {
                 <div>
                   <h2 className="text-4xl font-light tracking-widest mb-8">SHIPPING ADDRESS</h2>
                   <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-light tracking-wider mb-2">
-                          FIRST NAME <span className="text-red-600">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={shippingAddress.firstName}
-                          onChange={(e) =>
+                    {/* Saved Addresses Section */}
+                    {savedAddresses.length > 0 && (
+                      <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                        <h3 className="text-lg font-light tracking-wider mb-4">SAVED ADDRESSES</h3>
+                        <div className="space-y-3">
+                          {savedAddresses.map((addr: any) => (
+                            <label key={addr._id} className="flex items-start gap-4 cursor-pointer hover:bg-white p-3 rounded transition-colors">
+                              <input
+                                type="radio"
+                                name="address"
+                                value={addr._id}
+                                checked={selectedAddressId === addr._id}
+                                onChange={(e) => {
+                                  setSelectedAddressId(e.target.value);
+                                  setShowAddressForm(false);
+                                  setShippingAddress({
+                                    firstName: addr.firstName,
+                                    lastName: addr.lastName,
+                                    email: addr.email,
+                                    phone: addr.phone,
+                                    street: addr.street,
+                                    city: addr.city,
+                                    state: addr.state,
+                                    zipCode: addr.zipCode,
+                                    country: addr.country || 'United States',
+                                    countryCode: addr.countryCode || 'US',
+                                  });
+                                }}
+                                className="mt-1 cursor-pointer"
+                              />
+                              <div className="flex-1">
+                                <p className="font-light text-sm">
+                                  {addr.firstName} {addr.lastName}
+                                </p>
+                                <p className="text-sm text-gray-600 font-light">
+                                  {addr.street}, {addr.city}, {addr.state} {addr.zipCode}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">{addr.phone}</p>
+                                {addr.isDefault && (
+                                  <span className="text-xs bg-black text-white px-2 py-1 rounded mt-2 inline-block">DEFAULT</span>
+                                )}
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddressForm(true);
+                            setSelectedAddressId("");
+                            // Reset form to clear any saved data
+                            setShippingAddress({
+                              firstName: "",
+                              lastName: "",
+                              email: user?.email || "",
+                              phone: "",
+                              street: "",
+                              city: "",
+                              state: "",
+                              zipCode: "",
+                              country: "",
+                              countryCode: "",
+                            });
+                            setShippingErrors({});
+                          }}
+                          className="w-full mt-4 luxury-button border-2 border-black text-black px-4 py-2 font-light tracking-wider text-sm hover:bg-gray-100 transition-all cursor-pointer"
+                        >
+                          + ADD NEW ADDRESS
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Address Form */}
+                    {showAddressForm && (
+                      <>
+                        <div className="grid grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-light tracking-wider mb-2">
+                              FIRST NAME <span className="text-red-600">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={shippingAddress.firstName}
+                              onChange={(e) =>
+                                setShippingAddress({
+                                  ...shippingAddress,
+                                  firstName: e.target.value,
+                                })
+                              }
+                              className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
+                                shippingErrors.firstName
+                                  ? "border-red-500 focus:border-red-600"
+                                  : "border-gray-300 focus:border-black"
+                              }`}
+                              placeholder="John"
+                            />
+                            {shippingErrors.firstName && (
+                              <p className="text-red-600 text-xs mt-1 font-light">
+                                {shippingErrors.firstName}
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-light tracking-wider mb-2">
+                              LAST NAME <span className="text-red-600">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={shippingAddress.lastName}
+                              onChange={(e) =>
+                                setShippingAddress({
+                                  ...shippingAddress,
+                                  lastName: e.target.value,
+                                })
+                              }
+                              className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
+                                shippingErrors.lastName
+                                  ? "border-red-500 focus:border-red-600"
+                                  : "border-gray-300 focus:border-black"
+                              }`}
+                              placeholder="Doe"
+                            />
+                            {shippingErrors.lastName && (
+                              <p className="text-red-600 text-xs mt-1 font-light">
+                                {shippingErrors.lastName}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-light tracking-wider mb-2">
+                            EMAIL <span className="text-red-600">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            value={shippingAddress.email}
+                            onChange={(e) =>
+                              setShippingAddress({ ...shippingAddress, email: e.target.value })
+                            }
+                            className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
+                              shippingErrors.email
+                                ? "border-red-500 focus:border-red-600"
+                                : "border-gray-300 focus:border-black"
+                            }`}
+                            placeholder="john@example.com"
+                          />
+                          {shippingErrors.email && (
+                            <p className="text-red-600 text-xs mt-1 font-light">
+                              {shippingErrors.email}
+                            </p>
+                          )}
+                        </div>
+
+                        <CountryPhoneInput
+                          countryCode={shippingAddress.countryCode || ""}
+                          phone={shippingAddress.phone}
+                          onCountryChange={(country: Country) =>
                             setShippingAddress({
                               ...shippingAddress,
-                              firstName: e.target.value,
+                              country: country.name,
+                              countryCode: country.code,
                             })
                           }
-                          className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
-                            shippingErrors.firstName
-                              ? "border-red-500 focus:border-red-600"
-                              : "border-gray-300 focus:border-black"
-                          }`}
-                          placeholder="John"
-                        />
-                        {shippingErrors.firstName && (
-                          <p className="text-red-600 text-xs mt-1 font-light">
-                            {shippingErrors.firstName}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-light tracking-wider mb-2">
-                          LAST NAME <span className="text-red-600">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={shippingAddress.lastName}
-                          onChange={(e) =>
-                            setShippingAddress({
-                              ...shippingAddress,
-                              lastName: e.target.value,
-                            })
+                          onPhoneChange={(phone: string) =>
+                            setShippingAddress({ ...shippingAddress, phone })
                           }
-                          className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
-                            shippingErrors.lastName
-                              ? "border-red-500 focus:border-red-600"
-                              : "border-gray-300 focus:border-black"
-                          }`}
-                          placeholder="Doe"
+                          error={shippingErrors.countryCode || shippingErrors.phone}
                         />
-                        {shippingErrors.lastName && (
+                        {shippingErrors.phone && (
                           <p className="text-red-600 text-xs mt-1 font-light">
-                            {shippingErrors.lastName}
+                            {shippingErrors.phone}
                           </p>
                         )}
-                      </div>
-                    </div>
 
-                    <div>
-                      <label className="block text-sm font-light tracking-wider mb-2">
-                        EMAIL <span className="text-red-600">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        value={shippingAddress.email}
-                        onChange={(e) =>
-                          setShippingAddress({ ...shippingAddress, email: e.target.value })
-                        }
-                        className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
-                          shippingErrors.email
-                            ? "border-red-500 focus:border-red-600"
-                            : "border-gray-300 focus:border-black"
-                        }`}
-                        placeholder="john@example.com"
-                      />
-                      {shippingErrors.email && (
-                        <p className="text-red-600 text-xs mt-1 font-light">
-                          {shippingErrors.email}
-                        </p>
-                      )}
-                    </div>
+                        <div>
+                          <label className="block text-sm font-light tracking-wider mb-2">
+                            COUNTRY <span className="text-red-600">*</span>
+                          </label>
+                          <div className="w-full px-4 py-3 border border-gray-300 rounded-lg font-light bg-gray-50 text-gray-700">
+                            {shippingAddress.country || "Select a country"}
+                          </div>
+                          {shippingErrors.country && (
+                            <p className="text-red-600 text-xs mt-1 font-light">
+                              {shippingErrors.country}
+                            </p>
+                          )}
+                        </div>
 
-                    <div>
-                      <label className="block text-sm font-light tracking-wider mb-2">
-                        PHONE <span className="text-red-600">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        value={shippingAddress.phone}
-                        onChange={(e) =>
-                          setShippingAddress({ ...shippingAddress, phone: e.target.value })
-                        }
-                        className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
-                          shippingErrors.phone
-                            ? "border-red-500 focus:border-red-600"
-                            : "border-gray-300 focus:border-black"
-                        }`}
-                        placeholder="+1 (555) 123-4567"
-                      />
-                      {shippingErrors.phone && (
-                        <p className="text-red-600 text-xs mt-1 font-light">
-                          {shippingErrors.phone}
-                        </p>
-                      )}
-                    </div>
+                        <div>
+                          <label className="block text-sm font-light tracking-wider mb-2">
+                            STREET ADDRESS <span className="text-red-600">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={shippingAddress.street}
+                            onChange={(e) =>
+                              setShippingAddress({ ...shippingAddress, street: e.target.value })
+                            }
+                            className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
+                              shippingErrors.street
+                                ? "border-red-500 focus:border-red-600"
+                                : "border-gray-300 focus:border-black"
+                            }`}
+                            placeholder="123 Main St"
+                          />
+                          {shippingErrors.street && (
+                            <p className="text-red-600 text-xs mt-1 font-light">
+                              {shippingErrors.street}
+                            </p>
+                          )}
+                        </div>
 
-                    <div>
-                      <label className="block text-sm font-light tracking-wider mb-2">
-                        STREET ADDRESS <span className="text-red-600">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={shippingAddress.street}
-                        onChange={(e) =>
-                          setShippingAddress({ ...shippingAddress, street: e.target.value })
-                        }
-                        className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
-                          shippingErrors.street
-                            ? "border-red-500 focus:border-red-600"
-                            : "border-gray-300 focus:border-black"
-                        }`}
-                        placeholder="123 Main St"
-                      />
-                      {shippingErrors.street && (
-                        <p className="text-red-600 text-xs mt-1 font-light">
-                          {shippingErrors.street}
-                        </p>
-                      )}
-                    </div>
+                        <div className="grid grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-light tracking-wider mb-2">
+                              CITY <span className="text-red-600">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={shippingAddress.city}
+                              onChange={(e) =>
+                                setShippingAddress({ ...shippingAddress, city: e.target.value })
+                              }
+                              className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
+                                shippingErrors.city
+                                  ? "border-red-500 focus:border-red-600"
+                                  : "border-gray-300 focus:border-black"
+                              }`}
+                              placeholder="New York"
+                            />
+                            {shippingErrors.city && (
+                              <p className="text-red-600 text-xs mt-1 font-light">
+                                {shippingErrors.city}
+                              </p>
+                            )}
+                          </div>
 
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-light tracking-wider mb-2">
-                          CITY <span className="text-red-600">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={shippingAddress.city}
-                          onChange={(e) =>
-                            setShippingAddress({ ...shippingAddress, city: e.target.value })
-                          }
-                          className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
-                            shippingErrors.city
-                              ? "border-red-500 focus:border-red-600"
-                              : "border-gray-300 focus:border-black"
-                          }`}
-                          placeholder="New York"
-                        />
-                        {shippingErrors.city && (
-                          <p className="text-red-600 text-xs mt-1 font-light">
-                            {shippingErrors.city}
-                          </p>
+                          <div>
+                            <label className="block text-sm font-light tracking-wider mb-2">
+                              STATE <span className="text-red-600">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={shippingAddress.state}
+                              onChange={(e) =>
+                                setShippingAddress({ ...shippingAddress, state: e.target.value })
+                              }
+                              className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
+                                shippingErrors.state
+                                  ? "border-red-500 focus:border-red-600"
+                                  : "border-gray-300 focus:border-black"
+                              }`}
+                              placeholder="NY"
+                            />
+                            {shippingErrors.state && (
+                              <p className="text-red-600 text-xs mt-1 font-light">
+                                {shippingErrors.state}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-light tracking-wider mb-2">
+                              ZIP CODE <span className="text-red-600">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={shippingAddress.zipCode}
+                              onChange={(e) =>
+                                setShippingAddress({ ...shippingAddress, zipCode: e.target.value })
+                              }
+                              className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
+                                shippingErrors.zipCode
+                                  ? "border-red-500 focus:border-red-600"
+                                  : "border-gray-300 focus:border-black"
+                              }`}
+                              placeholder="10001"
+                            />
+                            {shippingErrors.zipCode && (
+                              <p className="text-red-600 text-xs mt-1 font-light">
+                                {shippingErrors.zipCode}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {user && (
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={saveAddressForLater}
+                              onChange={(e) => setSaveAddressForLater(e.target.checked)}
+                              className="cursor-pointer"
+                            />
+                            <span className="text-sm font-light">Save this address for future orders</span>
+                          </label>
                         )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-light tracking-wider mb-2">
-                          STATE <span className="text-red-600">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={shippingAddress.state}
-                          onChange={(e) =>
-                            setShippingAddress({ ...shippingAddress, state: e.target.value })
-                          }
-                          className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
-                            shippingErrors.state
-                              ? "border-red-500 focus:border-red-600"
-                              : "border-gray-300 focus:border-black"
-                          }`}
-                          placeholder="NY"
-                        />
-                        {shippingErrors.state && (
-                          <p className="text-red-600 text-xs mt-1 font-light">
-                            {shippingErrors.state}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-light tracking-wider mb-2">
-                          ZIP CODE <span className="text-red-600">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={shippingAddress.zipCode}
-                          onChange={(e) =>
-                            setShippingAddress({ ...shippingAddress, zipCode: e.target.value })
-                          }
-                          className={`w-full px-4 py-3 border rounded-lg font-light focus:outline-none transition-all ${
-                            shippingErrors.zipCode
-                              ? "border-red-500 focus:border-red-600"
-                              : "border-gray-300 focus:border-black"
-                          }`}
-                          placeholder="10001"
-                        />
-                        {shippingErrors.zipCode && (
-                          <p className="text-red-600 text-xs mt-1 font-light">
-                            {shippingErrors.zipCode}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-light tracking-wider mb-2">
-                          COUNTRY
-                        </label>
-                        <input
-                          type="text"
-                          value={shippingAddress.country}
-                          disabled
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg font-light bg-gray-50"
-                        />
-                      </div>
-                    </div>
+                      </>
+                    )}
 
                     <div className="flex gap-4">
                       <button
@@ -666,7 +816,11 @@ export default function Checkout() {
                   <h2 className="text-4xl font-light tracking-widest mb-8">PAYMENT</h2>
 
                   <div className="mb-8 space-y-4">
-                    <label className="flex items-center p-4 border-2 border-black bg-gray-50 rounded-lg cursor-pointer">
+                    <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      paymentMethod === "card"
+                        ? "border-black bg-gray-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}>
                       <input
                         type="radio"
                         name="payment"
@@ -678,7 +832,11 @@ export default function Checkout() {
                       <span className="ml-4 font-light tracking-wider">Credit/Debit Card</span>
                     </label>
 
-                    <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-300">
+                    <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      paymentMethod === "paypal"
+                        ? "border-black bg-gray-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}>
                       <input
                         type="radio"
                         name="payment"
@@ -690,7 +848,11 @@ export default function Checkout() {
                       <span className="ml-4 font-light tracking-wider">PayPal</span>
                     </label>
 
-                    <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-300">
+                    <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      paymentMethod === "apple"
+                        ? "border-black bg-gray-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}>
                       <input
                         type="radio"
                         name="payment"
